@@ -33,6 +33,24 @@ import datetime
 from astropy.convolution import convolve
 from astropy.convolution import Gaussian2DKernel
 
+def get_coastal_mask(path, proj):
+	
+	coast_file = data=xr.open_dataset(path+'distance-to-coast_2m.nc')
+	lat_c = coast_file['lat'][:].values
+	lon_c = coast_file['lon'][:].values
+	z_c = coast_file['z'][:].values
+
+	#REMOVE SOME OF THE COAST DISTANCE DATA THAT ISN'T NEEDED
+	lat_c=lat_c[4250:-1]
+	lon_c=lon_c[::20]
+	z_c=z_c[4250:-1, ::20]
+	print(np.amin(lat_c), np.amax(lat_c))
+	print(np.amin(lon_c), np.amax(lon_c))
+
+	xpts_c, ypts_c = proj(*np.meshgrid(lon_c, lat_c))
+
+	return xpts_c, ypts_c, z_c
+
 def getLeapYr(year):
 	leapYrs=[1976, 1980, 1984, 1988, 1992, 1996, 2000, 2004, 2008, 2012, 2016, 2020]
 	if year in leapYrs:
