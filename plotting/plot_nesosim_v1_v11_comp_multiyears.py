@@ -63,7 +63,7 @@ for x in range(len(years)):
 	_, _, _, dateOut=ut.getDays(yearS, month1, day1, yearS+1, month2, day2)
 
 	reanalysis='ERA5'
-	folderStr=reanalysis+'sfERAIwindsOSISAFdriftsCDRsicrhovariable_IC2_DYN1_WP1_LL0_AL1_WPF5.8e-07_WPT5_LLF2.9e-07-100kmv11oct15'
+	folderStr=reanalysis+'sfERAIwindsNSIDCdriftsCDRsicrhovariable_IC2_DYN1_WP1_LL0_AL1_WPF5.8e-07_WPT5_LLF2.9e-07-100kmv11oct15'
 	totalOutStr=''+folderStr+'-'+dateOut
 
 	# take the last day of both!

@@ -38,8 +38,8 @@ def mask_data_2d_1d(nesosim_data, oib_data):
 	maskDay[np.where(np.isnan(nesosim_data))]=1
 	maskDay[np.where(np.isnan(oib_data))]=1
 
-	maskDay[np.where(oib_data<=4)]=1
-	maskDay[np.where(nesosim_data<=4)]=1
+	maskDay[np.where(oib_data<=3)]=1
+	maskDay[np.where(nesosim_data<=3)]=1
 
 	maskDay[np.where(oib_data>80)]=1
 	maskDay[np.where(nesosim_data>80)]=1
@@ -53,7 +53,7 @@ def mask_data_2d_1d(nesosim_data, oib_data):
 dx_oib=100000
 extraStr='v11'
 outStr='rc_mask'
-snowType='MEDIAN'
+snowType=''
 mask_region=True
 mask_coast=True
 
@@ -77,7 +77,7 @@ day1=0
 month2=3 # 4=May
 day2=29
 
-years=np.arange(2011, 2015+1)
+years=np.arange(2010, 2015+1)
 
 nesosim_1d_all=[]
 oib_1d_all=[]
@@ -90,13 +90,18 @@ for x in range(len(years)):
 	dates_oib_year=[file.split('/')[-1][0:8] for file in files]
 	print(dates_oib_year)
 
+	# get rid of dates beyong Apr 30
+
+	dates_oib_year=[date for date in dates_oib_year if date[4:6] not in '05']
+	print(dates_oib_year)
+
 	_, _, _, dateOut=ut.getDays(oib_year-1, month1, day1, oib_year, month2, day2)
 
 	OIBdaysAfterSepT= ut.getOIBbudgetDays(dates_oib_year, oib_year-1, month1, day1)
 
 
 	reanalysis='ERA5'
-	folderStr=reanalysis+'sfERAIwindsOSISAFdriftsCDRsicrhovariable_IC2_DYN1_WP1_LL0_AL1_WPF5.8e-07_WPT5_LLF2.9e-07-'+dxStr_m+'v11oct15'
+	folderStr=reanalysis+'sfERA5windsOSISAFdriftsCDRsicrhovariable_IC2_DYN1_WP1_LL1_AL1_WPF5.8e-07_WPT5_LLF1.45e-07-'+dxStr_m+'v11oct28'
 	totalOutStr=''+folderStr+'-'+dateOut
 
 
@@ -151,7 +156,7 @@ for x in range(len(years)):
 		plt.sca(ax)
 		plt.imshow(oib_grid, origin='lower', vmin=0, vmax=60)
 
-		plt.savefig(figure_path+'/OIB/comps/'+str(oib_year)+'OIBcorrelations'+folderStr+dxStr_m+dxStr_oib+extraStr+snowType+outStr+'_map.png', dpi=300)
+		plt.savefig(figure_path+'/OIB/model_comps/'+str(oib_year)+'OIBcorrelations'+folderStr+dxStr_m+dxStr_oib+extraStr+snowType+outStr+'_map.png', dpi=300)
 
 
 	fig = plt.figure(figsize=(4, 3))
@@ -163,15 +168,24 @@ for x in range(len(years)):
 	plt.plot(np.arange(0, 100, 0.1), np.arange(0, 100, 0.1), 'k', ls='--')
 
 	trend, sig, r_a, intercept = ut.correlateVars(nesosim_1d,oib_1d)
-	r_str = '%.2f' % r_a
+	rStr = '%.2f' % r_a
+
 	rmse=np.sqrt(np.mean((np.array(nesosim_1d)-np.array(oib_1d))**2))
 	rmsStr='%.0f' % rmse
+
+	merr=np.mean(np.array(nesosim_1d)-np.array(oib_1d))
+	merrStr='%.1f' % merr	
+
+	std=np.std(np.array(nesosim_1d)-merr-np.array(oib_1d))
+	stdStr='%.1f' % std
+
+	num_grids=np.size(nesosim_1d)
 
 	ax.annotate(str(oib_year), xy=(0.02, 1.01), 
 			xycoords='axes fraction', color='k', verticalalignment='bottom', horizontalalignment='left')
 
-	ax.annotate('r: '+r_str+'  RMSE: '+rmsStr+' cm', xy=(0.02, 0.92), 
-			xycoords='axes fraction', color='k', verticalalignment='bottom', horizontalalignment='left')
+	ax.annotate('r: '+rStr+'\nRMSE: '+rmsStr+' cm'+'\nMean bias: '+merrStr+' cm'+'\nSD: '+stdStr+' cm'+'\nN: '+str(num_grids), xy=(0.02, 0.98), 
+			xycoords='axes fraction', color='k', verticalalignment='top', horizontalalignment='left')
 
 	plt.xlim(0, 80)
 	plt.ylim(0, 80)
@@ -180,7 +194,7 @@ for x in range(len(years)):
 	plt.xlabel('NESOSIM v11 ('+reanalysis+'-SF) snow depth (cm)') 
 
 	plt.tight_layout()
-	plt.savefig(figure_path+'/OIB/comps/'+str(oib_year)+'OIBcorrelations'+folderStr+dxStr_m+dxStr_oib+extraStr+snowType+outStr+'.pdf', dpi=300)
+	plt.savefig(figure_path+'/OIB/model_comps/'+str(oib_year)+'OIBcorrelations'+folderStr+dxStr_m+dxStr_oib+extraStr+snowType+outStr+'.pdf', dpi=300)
 	#savefig(figpath+'/seasonalSnowDensityComp4'+folderStr+'.png', dpi=300)
 	plt.close(fig)
 
@@ -194,24 +208,33 @@ im1 = plt.scatter(nesosim_1d_all,oib_1d_all, color='0.4',s=6, marker='x', alpha=
 plt.plot(np.arange(0, 100, 0.1), np.arange(0, 100, 0.1), 'k', ls='--')
 
 trend, sig, r_a, intercept = ut.correlateVars(nesosim_1d_all,oib_1d_all)
-r_str = '%.2f' % r_a
+rStr = '%.2f' % r_a
+
 rmse=np.sqrt(np.mean((np.array(nesosim_1d_all)-np.array(oib_1d_all))**2))
 rmsStr='%.0f' % rmse
+
+merr=np.mean(np.array(nesosim_1d_all)-np.array(oib_1d_all))
+merrStr='%.1f' % merr	
+
+std=np.std(np.array(nesosim_1d_all)-merr-np.array(oib_1d_all))
+stdStr='%.1f' % std
+
+num_grids=np.size(nesosim_1d_all)
 
 ax.annotate(str(years[0])+'-'+str(years[-1]), xy=(0.02, 1.01), 
 		xycoords='axes fraction', color='k', verticalalignment='bottom', horizontalalignment='left')
 
-ax.annotate('r: '+r_str+'  RMSE: '+rmsStr+' cm', xy=(0.02, 0.92), 
-		xycoords='axes fraction', color='k', verticalalignment='bottom', horizontalalignment='left')
+ax.annotate('r: '+rStr+'\nRMSE: '+rmsStr+' cm'+'\nMean bias: '+merrStr+' cm'+'\nSD: '+stdStr+' cm'+'\nN: '+str(num_grids), xy=(0.02, 0.98), 
+			xycoords='axes fraction', color='k', verticalalignment='top', horizontalalignment='left')
 
 plt.xlim(0, 80)
 plt.ylim(0, 80)
 
 plt.ylabel('OIB snow depth '+snowType+' (cm)')
-plt.xlabel('NESOSIM v11 snow depth (cm)') 
+plt.xlabel('NESOSIM v1.1 snow depth (cm)') 
 
 plt.tight_layout()
-plt.savefig(figure_path+'/OIB/comps/'+str(years[0])+'-'+str(years[-1])+'OIBcorrelations'+folderStr+dxStr_m+dxStr_oib+extraStr+snowType+outStr+'.pdf', dpi=300)
+plt.savefig(figure_path+'/OIB/model_comps/'+str(years[0])+'-'+str(years[-1])+'OIBcorrelations'+folderStr+dxStr_m+dxStr_oib+extraStr+snowType+outStr+'.pdf', dpi=300)
 #savefig(figpath+'/seasonalSnowDensityComp4'+folderStr+'.png', dpi=300)
 plt.close(fig)
 
